@@ -1,0 +1,21 @@
+on:
+  workflow_call:
+    inputs:
+      product-name:
+        description: 'Product name'
+        required: true
+        type: string
+      product-type:
+        description: 'Product type'
+        required: true
+        type: string
+
+jobs:
+  trufflehog:
+    - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@v3.4.3
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --json-legacy # Required for the reporter to work

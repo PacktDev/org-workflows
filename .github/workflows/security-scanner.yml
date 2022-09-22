@@ -1,0 +1,89 @@
+on:
+  workflow_dispatch:
+    inputs:
+      product-name:
+        description: 'Product name'
+        required: true
+        type: string
+      product-type:
+        description: 'Product type'
+        required: true
+        type: string
+    secrets:
+      base-url:
+        description: 'Base URL'
+        required: true
+      api-key:
+        description: 'API Key'
+        required: true
+  workflow_call:
+    inputs:
+      product-name:
+        description: 'Product name'
+        required: true
+        type: string
+      product-type:
+        description: 'Product type'
+        required: true
+        type: string
+    secrets:
+      base-url:
+        description: 'DefectDojo base URL'
+        required: true
+      api-key:
+        description: 'DefectDojo API key'
+        required: true
+      
+
+jobs:
+  security-scanner:
+    name: Security Scanner
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scanner:
+          - trufflehog
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Scanner
+        id: ${{ matrix.scanner }}
+        uses: ./scanners/${{ matrix.scanner }}
+  
+  security-reporter:
+    name: Security Reporter
+    runs-on: ubuntu-latest
+    needs: security-scanner
+    steps:
+      - name: Download scan report
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: ${{ needs.security-scanner.outputs.scan-name }}
+          run_id: ${{ needs.security-scanner.outputs.scan-run-id }}
+          workflow_conclusion: success
+      - name: Report to DefectDojo
+        env:
+          BASE_URL: ${{ secrets.base-url }}
+          API_KEY: ${{ secrets.api-key }}
+          PRODUCT_NAME: ${{ inputs.product-name }}
+          PRODUCT_TYPE: ${{ inputs.product-type }}
+          SCAN_TYPE: ${{ inputs.scan-type }}
+          SCAN_PATH: ${{ inputs.scan-path }}
+        run: |
+          curl -X POST ${BASE_URL}/api/v2/import-scan/ \
+            -H "Authorization: Token ${API_KEY}" \
+            -H "Content-Type: multipart/form " \
+            -F "minimum_severity=Info" \
+            -F "scan_date=$(date -I)" \
+            -F "verified=True" \
+            -F "active=False" \
+            -F "scan_type=${SCAN_TYPE}" \
+            -F "file=@${SCAN_PATH}" \
+            -F "close_old_findings=True" \
+            -F "product_name=${PRODUCT_NAME}" \
+            -F "product_type=${PRODUCT_TYPE}"
+            -F "engagement_name=${GITHUB_REF_NAME}" \
+            -F "engagement_type=CI/CD" \
+            -F "lead=GitHub Actions" \
+            -F "commit_hash=${GITHUB_SHA}"

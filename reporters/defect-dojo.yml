@@ -1,0 +1,42 @@
+on:
+  workflow_call:
+    inputs:
+      product-name:
+        description: 'Product name'
+        required: true
+        type: string
+      product-type:
+        description: 'Product type'
+        required: true
+        type: string
+      scan-type:
+        description: 'Scan type'
+        required: true
+        type: string
+      scan-name:
+        description: 'File for the scan report'
+        required: true
+        type: string
+      scan-run-id:
+        description: 'Scan run ID'
+        required: true
+        type: number
+    secrets:
+      base-url:
+        description: 'DefectDojo base URL'
+        required: true
+      api-key:
+        description: 'DefectDojo API key'
+        required: true
+
+jobs:
+  defect-dojo-report:
+    name: Report to DefectDojo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download scan report
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: ${{ inputs.scan-name }}
+          run_id: ${{ inputs.scan-run-id }}
+          workflow_conclusion: success
