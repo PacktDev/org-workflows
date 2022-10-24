@@ -1,0 +1,24 @@
+# https://semgrep.dev/docs/writing-rules/overview/
+rules:
+  - id: php.laravel.best-practice.env-outside-of-config
+    message: |
+      Calling the env() function outside of the config files doesn't allow the configuation to be cached for bootstrapping.
+    metadata:
+      source-rule-url: https://github.com/alexeymezenin/laravel-best-practices#do-not-get-data-from-the-env-file-directly
+      category: best-practice
+    severity: WARNING
+    patterns:
+      - pattern-either:
+          - pattern: env("...")
+          - pattern: env("...", ...)
+    paths:
+      exclude:
+        - "config/*.php"
+        - "*/config/*.php"
+    languages:
+      - php
+  - id: php.laravel.best-practice.cache-remember
+    message: |
+      Using the remember() method on the cache facade is a shortcut for checking if a value exists in the cache and if not, storing the default value.
+    severity: WARNING
+    patterns:
