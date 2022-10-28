@@ -17,8 +17,25 @@ rules:
         - "*/config/*.php"
     languages:
       - php
+
   - id: php.laravel.best-practice.cache-remember
     message: |
       Using the remember() method on the cache facade is a shortcut for checking if a value exists in the cache and if not, storing the default value.
     severity: WARNING
-    patterns:
+    metadata:
+      category: best-practice
+    pattern-either:
+      - patterns:
+        - pattern: Cache::add(...);
+        - pattern: Cache::get(...);
+        
+      - patterns:
+        - pattern: CacheHelper::addItem(...);
+        - pattern: CacheHelper::getItem(...);
+
+    languages:
+      - php
+    paths:
+      exclude:
+        - "config/*.php"
+        - "*/config/*.php"
